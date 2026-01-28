@@ -74,6 +74,7 @@ class cvOneDFEAVector{
     long GetDimension() const {return dimension;}
     const long* GetEquationNumbers() const {return equationNumbers;}
     double* GetEntries() {return entries;}
+    const double* GetEntries() const {return entries;}
     double& operator[](long i);
     cvOneDFEAVector& operator=(const cvOneDFEAVector& rhs);
     cvOneDFEAVector& operator+=(const cvOneDFEAVector& rhs);

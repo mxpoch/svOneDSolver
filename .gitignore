@@ -1,5 +1,11 @@
 build
 
+.venv
+_deps
+.cache
+svOneDSolver_build
+
+.env
 # Prerequisites
 *.d
 *.DS_STORE

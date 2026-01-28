@@ -38,6 +38,7 @@
 # include "cvOneDMaterial.h"
 # include "cvOneDMthSegmentModel.h"
 # include "cvOneDMthBranchModel.h"
+# include "cvOneDSolSerializer.h"
 
 #ifndef WIN32
 #define _USE_MATH_DEFINES
@@ -1360,7 +1361,6 @@ void cvOneDBFSolver::GenerateSolution(void){
   clock_t tend_iter;
   clock_t tend_solve;
 
-
   // Print the formulation used
 
   if(cvOneDGlobal::CONSERVATION_FORM){
@@ -1402,6 +1402,9 @@ void cvOneDBFSolver::GenerateSolution(void){
   double checkMass = 0;
   int numberOfCycle = 1;
   long iter_total = 0;
+
+  // GPSFORAI data collection
+  cvOneDFEAVectorHistory FEAVectorHistory;
 
   // Time stepping
   for(long step = 1; step <= maxStep; step++){
@@ -1465,7 +1468,7 @@ void cvOneDBFSolver::GenerateSolution(void){
       if (std::isnan(norms) || std::isnan(normf)) {
           throw cvException("Calculated a NaN for the residual.");
       }
-
+ 
       // Check Newton-Raphson Convergence
       if((currentTime != deltaTime || (currentTime == deltaTime && iter != 0)) && normf < convCriteria && norms < convCriteria){
         cout << "    iter: " << std::to_string(iter) << " ";
@@ -1479,9 +1482,13 @@ void cvOneDBFSolver::GenerateSolution(void){
       increment->Clear();
 
       cvOneDGlobal::solver->Solve(*increment);
-
+      
       currentSolution->Add(*increment);
-
+      
+      // saving the node data and residuals
+      cout << "GPSFORAI: Collecting step information" << endl;
+      FEAVectorHistory.RecordStep(*currentSolution, normf, norms); 
+      
       // If the area goes less than zero, it tells in which segment the error occurs.
       // Assumes that all the lagrange multipliers are at the end of the vector.
       int negArea=0;
@@ -1557,6 +1564,11 @@ void cvOneDBFSolver::GenerateSolution(void){
 
   }// End while
 
+  cout << "GPSFORAI: Writing iterations to files" << endl; // 000_004_step2_.bin
+  std::string fileName = std::string(model->getModelName()) + "_step" + std::to_string(step) + "_.bin";
+  std::string gpsFile = "/Users/max/Desktop/watai/GPSforAI/simdataset/" + fileName;
+  FEAVectorHistory.WriteToFile(gpsFile);
+  
   checkMass += mathModels[0]->CheckMassBalance() * deltaTime;
   cout << "  Time = " << currentTime << ", ";
   cout << "Mass = " << checkMass << ", ";
